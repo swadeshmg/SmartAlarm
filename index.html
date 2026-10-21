@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Alarm</title>
+<style>
+body {
+    font-family: Arial;
+    background: #111827;
+    color: white;
+    text-align: center;
+    padding: 40px 15px;
+}
+.box {
+    background: #1f2937;
+    padding: 25px;
+    border-radius: 15px;
+    max-width: 350px;
+    margin: auto;
+}
+input, button {
+    padding: 12px;
+    margin: 10px;
+    border-radius: 8px;
+    border: none;
+}
+button {
+    background: #22c55e;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="box">
+    <h1>Smart Alarm</h1>
+    <p>Choose your alarm time</p>
+    <input type="time" id="alarmTime">
+    <br>
+    <button onclick="setAlarm()">Set Alarm</button>
+    <button onclick="stopAlarm()">Stop Alarm</button>
+    <h3 id="status">Alarm not set</h3>
+</div>
+
+<script>
+let alarmTimer;
+let audioContext;
+let oscillator;
+let alarmTriggered = false;
+
+function setAlarm() {
+    const time = document.getElementById("alarmTime").value;
+
+    if (!time) {
+        alert("Please select a time");
+        return;
+    }
+
+    clearInterval(alarmTimer);
+    stopSound();
+    alarmTriggered = false;
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioContext.resume();
+
+    document.getElementById("status").textContent = "Alarm set for " + time;
+
+    alarmTimer = setInterval(() => {
+        const now = new Date();
+        const current =
+            String(now.getHours()).padStart(2, "0") + ":" +
+            String(now.getMinutes()).padStart(2, "0");
+
+        if (current === time && !alarmTriggered) {
+            alarmTriggered = true;
+            clearInterval(alarmTimer);
+            document.getElementById("status").textContent = "Alarm ringing!";
+            playSound();
+        }
+    }, 1000);
+}
+
+function playSound() {
+    if (!audioContext || audioContext.state !== "running") return;
+
+    oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    gain.gain.value = 0.3;
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+}
+
+function stopSound() {
+    if (oscillator) {
+        try { oscillator.stop(); } catch (e) {}
+        oscillator = null;
+    }
+}
+
+function stopAlarm() {
+    clearInterval(alarmTimer);
+    stopSound();
+    alarmTriggered = true;
+    document.getElementById("status").textContent = "Alarm stopped";
+}
+</script>
+</body>
+</html>
